@@ -2,8 +2,9 @@ use crate::process::imp::orphan::{OrphanQueue, Wait};
 use crate::process::kill::Kill;
 use crate::signal::unix::InternalStream;
 
+use std::fs::File;
 use std::future::Future;
-use std::io;
+use std::io::{self, Write};
 use std::ops::Deref;
 use std::pin::Pin;
 use std::process::ExitStatus;
@@ -21,6 +22,7 @@ where
     inner: Option<W>,
     orphan_queue: Q,
     signal: S,
+    _handle: File,
 }
 
 impl<W, Q, S> Deref for Reaper<W, Q, S>
@@ -41,10 +43,21 @@ where
     Q: OrphanQueue<W>,
 {
     pub(crate) fn new(inner: W, orphan_queue: Q, signal: S) -> Self {
+        #[cfg(not(target_os = "linux"))]
+        let mut file = File::options()
+            .append(true)
+            .open("/Users/charles/tokio.log")
+            .unwrap();
+        #[cfg(target_os = "linux")]
+        let mut file = File::options()
+            .append(true)
+            .open("/home/charles/tokio.log")
+            .unwrap();
         Self {
             inner: Some(inner),
             orphan_queue,
             signal,
+            _handle: file,
         }
     }
 
@@ -85,11 +98,15 @@ where
             // futures model allows for spurious wake ups this extra wakeup
             // should not cause significant issues with parent futures.
             let registered_interest = self.signal.poll_recv(cx).is_pending();
+            self._handle
+                .write(format!("-----{}------1-------\n", &registered_interest).as_bytes())
+                .unwrap();
 
             if let Some(status) = self.inner_mut().try_wait()? {
                 return Poll::Ready(Ok(status));
-            }
-
+            self._handle
+                .write(format!("-----{}------2-------\n", &registered_interest).as_bytes())
+                .unwrap();
             // If our attempt to poll for the next signal was not ready, then
             // we've arranged for our task to get notified and we can bail out.
             if registered_interest {

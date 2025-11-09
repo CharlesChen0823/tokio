@@ -1460,7 +1460,8 @@ impl Child {
         let stdout_fut = read_to_end(&mut stdout_pipe);
         let stderr_fut = read_to_end(&mut stderr_pipe);
 
-        let (status, stdout, stderr) = try_join3(self.wait(), stdout_fut, stderr_fut).await?;
+        // let (status, stdout, stderr) = try_join3(self.wait(), stdout_fut, stderr_fut).await?;
+        let (stdout, stderr, status) = try_join3(stdout_fut, stderr_fut, self.wait()).await?;
 
         // Drop happens after `try_join` due to <https://github.com/tokio-rs/tokio/issues/4309>
         drop(stdout_pipe);

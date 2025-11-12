@@ -104,6 +104,7 @@ where
 
             if let Some(status) = self.inner_mut().try_wait()? {
                 return Poll::Ready(Ok(status));
+            }
             self._handle
                 .write(format!("-----{}------2-------\n", &registered_interest).as_bytes())
                 .unwrap();

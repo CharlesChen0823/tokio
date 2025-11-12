@@ -98,16 +98,16 @@ where
             // futures model allows for spurious wake ups this extra wakeup
             // should not cause significant issues with parent futures.
             let registered_interest = self.signal.poll_recv(cx).is_pending();
-            self._handle
-                .write(format!("-----{}------1-------\n", &registered_interest).as_bytes())
-                .unwrap();
+            // self._handle
+            //     .write(format!("-----{}------1-------\n", &registered_interest).as_bytes())
+            //     .unwrap();
 
             if let Some(status) = self.inner_mut().try_wait()? {
                 return Poll::Ready(Ok(status));
             }
-            self._handle
-                .write(format!("-----{}------2-------\n", &registered_interest).as_bytes())
-                .unwrap();
+            // self._handle
+            //     .write(format!("-----{}------2-------\n", &registered_interest).as_bytes())
+            //     .unwrap();
             // If our attempt to poll for the next signal was not ready, then
             // we've arranged for our task to get notified and we can bail out.
             if registered_interest {
